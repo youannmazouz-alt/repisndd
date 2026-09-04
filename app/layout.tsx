@@ -5,7 +5,7 @@ import { Source_Code_Pro, Source_Sans_3 } from 'next/font/google'
 import './globals.css'
 import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
-import { SolanaProvider } from '@/components/solana-provider'
+import { WalletProvider } from '@/components/wallet-provider'
 
 const sourceSans = Source_Sans_3({
   subsets: ['latin'],
@@ -20,12 +20,12 @@ const sourceCode = Source_Code_Pro({
 export const metadata: Metadata = {
   title: 'INFER - Markets for Costly Beliefs',
   description:
-    'An experimental Solana forecasting protocol for costly probabilistic beliefs and measurable judgment.',
+    'An experimental Robinhood Chain forecasting protocol for costly probabilistic beliefs and measurable judgment.',
   generator: 'v0.app',
   openGraph: {
     title: 'INFER - Markets for Costly Beliefs',
     description:
-      'An experimental Solana forecasting protocol for costly probabilistic beliefs and measurable judgment.',
+      'An experimental Robinhood Chain forecasting protocol for costly probabilistic beliefs and measurable judgment.',
     type: 'website',
   },
   icons: {
@@ -48,11 +48,11 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${sourceSans.variable} ${sourceCode.variable} bg-background`}>
       <body className="flex min-h-screen flex-col antialiased">
-        <SolanaProvider>
+        <WalletProvider>
           <SiteHeader />
           <main className="flex-1">{children}</main>
           <SiteFooter />
-        </SolanaProvider>
+        </WalletProvider>
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>

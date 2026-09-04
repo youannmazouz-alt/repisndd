@@ -11,7 +11,11 @@ export function latestForecastPerWallet(forecasts: Forecast[]): Forecast[] {
   const latest = new Map<string, Forecast>()
   for (const f of forecasts) {
     const existing = latest.get(f.wallet)
-    if (!existing || f.timestamp > existing.timestamp || (f.timestamp === existing.timestamp && f.slot > existing.slot)) {
+    if (
+      !existing ||
+      f.timestamp > existing.timestamp ||
+      (f.timestamp === existing.timestamp && f.blockNumber > existing.blockNumber)
+    ) {
       latest.set(f.wallet, f)
     }
   }
@@ -39,7 +43,9 @@ export function uniqueForecasterCount(forecasts: Forecast[]): number {
  * running aggregate, and a new aggregate point is recorded.
  */
 export function replayBeliefHistory(forecasts: Forecast[]): { timestamp: number; belief: number }[] {
-  const chronological = [...forecasts].sort((a, b) => (a.timestamp - b.timestamp) || (a.slot - b.slot))
+  const chronological = [...forecasts].sort(
+    (a, b) => a.timestamp - b.timestamp || a.blockNumber - b.blockNumber,
+  )
   const runningLatest = new Map<string, number>()
   const points: { timestamp: number; belief: number }[] = []
 

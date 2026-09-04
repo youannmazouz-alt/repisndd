@@ -1,20 +1,23 @@
 "use client"
 
-import { useConnectedWallet, useIsWalletReady } from "@solana/kit-plugin-wallet/react"
-import { inferClient, type InferClient } from "@/lib/solana-client"
+import { useConnection } from "wagmi"
 
 /**
- * Thin wrapper around the Kit wallet plugin's React hooks. `inferClient` is
- * a stable module-level value determined by build-time env vars, so this
- * conditional is fixed for the app's lifetime and never toggles at runtime.
+ * Thin wrapper around wagmi's `useConnection` hook, exposing the connected
+ * EVM account and a stable `isReady` flag (false only while wagmi is still
+ * reconnecting on first mount). Kept as a small abstraction so components do
+ * not depend directly on wagmi's connection shape.
  */
 export function useInferWallet(): {
-  client: InferClient
+  address: `0x${string}` | undefined
+  isConnected: boolean
   isReady: boolean
-  connected: ReturnType<typeof useConnectedWallet>
 } {
-  const isReady = useIsWalletReady(inferClient)
-  const connected = useConnectedWallet(inferClient)
+  const connection = useConnection()
 
-  return { client: inferClient, isReady, connected }
+  return {
+    address: connection.address,
+    isConnected: connection.isConnected,
+    isReady: connection.status !== "reconnecting",
+  }
 }

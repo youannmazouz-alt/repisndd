@@ -1,34 +1,28 @@
 "use client"
 
-import { useCallback } from "react"
-import { useRequest } from "@solana/react"
-import { useInferWallet } from "@/lib/use-wallet-connection"
-import { fetchInferBalance } from "@/lib/token"
+import { useConnection, useBalance } from "wagmi"
 
 /**
- * Fetches the connected wallet's real $INFER balance. Uses `useRequest`
- * (from `@solana/react`) rather than a manual `useEffect`, so it fires on
- * mount, re-fires whenever the address changes, and exposes a `refresh()`
- * for the "refresh" affordances the product spec calls for.
+ * Fetches the connected wallet's real native-token (ETH) balance on the
+ * configured chain via wagmi's `useBalance`. Returns the balance as a
+ * human-readable number, exposes a `refresh()` for post-transaction
+ * refetches, and never fabricates a value.
  */
 export function useInferBalance() {
-  const { client, connected } = useInferWallet()
-  const address = connected?.account.address
+  const { address, isConnected } = useConnection()
+  const { data, isLoading, isError, refetch } = useBalance({
+    address,
+    query: { enabled: Boolean(address) },
+  })
 
-  const fetcher = useCallback(async () => {
-    if (!client || !address) return null
-    return fetchInferBalance(client, address)
-  }, [client, address])
-
-  const source = client && address ? fetcher : null
-  const { data, status, refresh } = useRequest(source)
+  const balance = data ? Number(data.value) / 10 ** data.decimals : null
 
   return {
-    balance: data ?? null,
-    loading: status === "fetching",
-    error: status === "error",
-    refresh,
-    connected: Boolean(connected),
+    balance,
+    loading: isLoading,
+    error: isError,
+    refresh: refetch,
+    connected: isConnected,
     address,
   }
 }
