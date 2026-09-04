@@ -5,13 +5,13 @@ import { useInferWallet } from "@/lib/use-wallet-connection"
 
 export function MarketsList() {
   const [hydrated, setHydrated] = useState(false)
-  const { connected } = useInferWallet()
+  const { isConnected } = useInferWallet()
 
   useEffect(() => {
     setHydrated(true)
   }, [])
 
-  const walletConnected = hydrated && Boolean(connected)
+  const walletConnected = hydrated && isConnected
 
   return (
     <div className="border-y border-border py-8">

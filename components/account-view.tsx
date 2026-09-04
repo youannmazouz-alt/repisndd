@@ -9,16 +9,14 @@ import { formatAddress, formatInfer, formatProbability, formatDateTime } from "@
 import { brierScore } from "@/lib/brier"
 import { explorerAddressUrl, explorerTxUrl } from "@/lib/explorer"
 import { WalletButton } from "@/components/wallet-button"
-import { getInferConfig } from "@/lib/env"
 
 export function AccountView() {
-  const { connected } = useInferWallet()
+  const { address, isConnected } = useInferWallet()
   const { balance, loading: balanceLoading } = useInferBalance()
-  const wallet = connected?.account.address as string | undefined
+  const wallet = address as string | undefined
   const { marketAggregates, isLoading, error } = useWalletForecasts(wallet)
-  const config = getInferConfig()
 
-  if (!connected) {
+  if (!isConnected || !wallet) {
     return (
       <div className="border border-dashed border-border p-8 text-center">
         <p className="text-sm text-muted-foreground">Connect a wallet to see your forecast history.</p>
@@ -31,7 +29,9 @@ export function AccountView() {
 
   const rows = markets
     .map((market) => {
-      const forecast = marketAggregates?.[market.id]?.forecasts.find((f) => f.wallet === wallet)
+      const forecast = marketAggregates?.[market.id]?.forecasts.find(
+        (f) => f.wallet.toLowerCase() === wallet.toLowerCase(),
+      )
       if (!forecast) return null
       const brier =
         market.status === "resolved" && market.resolvedOutcome !== null
@@ -47,18 +47,14 @@ export function AccountView() {
         <div className="flex items-center justify-between gap-4 py-3">
           <dt className="font-mono text-[11px] uppercase tracking-wide text-muted-foreground">wallet</dt>
           <dd className="font-mono text-sm text-foreground">
-            {config ? (
-              <a
-                href={explorerAddressUrl(wallet ?? "", config.network)}
-                target="_blank"
-                rel="noreferrer"
-                className="hover:underline"
-              >
-                {formatAddress(wallet ?? "", 6)}
-              </a>
-            ) : (
-              formatAddress(wallet ?? "", 6)
-            )}
+            <a
+              href={explorerAddressUrl(wallet ?? "")}
+              target="_blank"
+              rel="noreferrer"
+              className="hover:underline"
+            >
+              {formatAddress(wallet ?? "", 6)}
+            </a>
           </dd>
         </div>
         <div className="flex items-center justify-between gap-4 py-3">
@@ -72,7 +68,7 @@ export function AccountView() {
       <h2 className="mt-10 text-sm font-semibold uppercase tracking-wide text-foreground">Forecast history</h2>
 
       {error ? (
-        <p className="mt-4 text-sm text-muted-foreground">Solana data is temporarily unavailable.</p>
+        <p className="mt-4 text-sm text-muted-foreground">On-chain data is temporarily unavailable.</p>
       ) : isLoading ? (
         <p className="mt-4 font-mono text-sm text-muted-foreground">loading forecasts...</p>
       ) : rows.length === 0 ? (
@@ -112,18 +108,14 @@ export function AccountView() {
                   <td className="py-2 pr-4 font-mono tabular-nums">{brier !== null ? brier.toFixed(3) : "-"}</td>
                   <td className="py-2 pr-4 font-mono tabular-nums">{formatInfer(forecast.amountCommitted)}</td>
                   <td className="py-2 font-mono">
-                    {config ? (
-                      <a
-                        href={explorerTxUrl(forecast.signature, config.network)}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="hover:underline"
-                      >
-                        view
-                      </a>
-                    ) : (
-                      "-"
-                    )}
+                    <a
+                      href={explorerTxUrl(forecast.txHash)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="hover:underline"
+                    >
+                      view
+                    </a>
                   </td>
                 </tr>
               ))}

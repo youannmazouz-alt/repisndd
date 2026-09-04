@@ -14,7 +14,7 @@ import {
 
 export const metadata: Metadata = {
   title: "INFER",
-  description: "The complete INFER mechanism: costly probabilistic claims, Solana records, belief aggregation, resolution and measurable judgment.",
+  description: "The complete INFER mechanism: costly probabilistic claims, Robinhood Chain records, belief aggregation, resolution and measurable judgment.",
 }
 
 const contents = [
@@ -67,7 +67,7 @@ export default function HomePage() {
 
     <Section id="section-03" number="03" title="committing a forecast">
       <div className="grid gap-8 md:grid-cols-2">
-        <div><Label>Illustrative example / question</Label><p className="mt-3 font-serif text-xl">Will event X resolve YES before September 30?</p><dl className="mt-6 border-y border-border font-mono text-sm"><div className="flex justify-between border-b border-border py-3"><dt>Alice&apos;s estimate</dt><dd>72%</dd></div><div className="flex justify-between border-b border-border py-3"><dt>Forecast cost</dt><dd>1 INFER</dd></div><div className="flex justify-between py-3"><dt>Wallet</dt><dd>7Gxa...91Df [synthetic]</dd></div></dl></div>
+        <div><Label>Illustrative example / question</Label><p className="mt-3 font-serif text-xl">Will event X resolve YES before September 30?</p><dl className="mt-6 border-y border-border font-mono text-sm"><div className="flex justify-between border-b border-border py-3"><dt>Alice&apos;s estimate</dt><dd>72%</dd></div><div className="flex justify-between border-b border-border py-3"><dt>Forecast cost</dt><dd>1 INFER</dd></div><div className="flex justify-between py-3"><dt>Wallet</dt><dd>0x7Gxa...91Df [synthetic]</dd></div></dl></div>
         <div className="border border-border p-5 font-mono text-center text-sm"><p>ALICE / WALLET</p><p className="py-3 text-muted-foreground">│ selects<br/>↓</p><p className="text-3xl font-bold">72%</p><p className="py-3 text-muted-foreground">│ BACK THIS BELIEF<br/>↓</p><p className="border border-foreground bg-section p-3">1 INFER COMMITMENT</p></div>
       </div>
       <Prose>The commitment does not make Alice&apos;s forecast true. It creates a measurable cost for submitting the claim.</Prose>
@@ -76,7 +76,7 @@ export default function HomePage() {
     </Section>
 
     <Section id="section-04" number="04" title="transaction anatomy">
-      <Prose>A valid submission combines two instructions inside one Solana transaction: an SPL token transfer and a structured forecast memo.</Prose>
+      <Prose>A valid submission is one Robinhood Chain transaction that carries both a native-asset transfer to the treasury and a structured forecast memo in its calldata.</Prose>
       <TransactionFigure />
       <ValidationFlow />
       <p className="border-y border-foreground py-5 text-center font-serif text-xl font-bold">INFER validates commitment and claim together.</p>
@@ -124,17 +124,17 @@ export default function HomePage() {
     </Section>
 
     <Section id="section-10" number="10" title="system architecture">
-      <Prose>The application constructs evidence on Solana, then derives current belief and judgment state without overwriting the event history.</Prose>
+      <Prose>The application constructs evidence on Robinhood Chain, then derives current belief and judgment state without overwriting the event history.</Prose>
       <SystemFlow />
-      <div className="grid gap-4 md:grid-cols-3"><pre className="overflow-x-auto border border-border p-4 text-xs">{`Forecast {\n signature\n marketId\n wallet\n probability\n amountCommitted\n timestamp\n slot\n}`}</pre><pre className="overflow-x-auto border border-border p-4 text-xs">{`Market {\n id\n question\n closesAt\n resolutionRule\n status\n resolvedOutcome\n}`}</pre><pre className="overflow-x-auto border border-border p-4 text-xs">{`CurrentBelief {\n marketId\n uniqueForecasters\n aggregateProbability\n totalCommitted\n}`}</pre></div>
+      <div className="grid gap-4 md:grid-cols-3"><pre className="overflow-x-auto border border-border p-4 text-xs">{`Forecast {\n txHash\n marketId\n wallet\n probability\n amountCommitted\n timestamp\n blockNumber\n}`}</pre><pre className="overflow-x-auto border border-border p-4 text-xs">{`Market {\n id\n question\n closesAt\n resolutionRule\n status\n resolvedOutcome\n}`}</pre><pre className="overflow-x-auto border border-border p-4 text-xs">{`CurrentBelief {\n marketId\n uniqueForecasters\n aggregateProbability\n totalCommitted\n}`}</pre></div>
       <p className="mt-7 border-y border-foreground py-5 text-center font-serif text-lg font-bold">Forecast and token transfer are raw chain evidence. CurrentBelief is derived state.</p>
-      <div className="mt-8 flex flex-col items-stretch gap-2 text-center font-mono text-xs sm:flex-row sm:items-center"><div className="border border-border p-3">SOLANA EVENTS</div><span>→</span><div className="border border-border p-3">VALIDATION</div><span>→</span><div className="border border-border p-3">LATEST / WALLET + FULL HISTORY</div><span>→</span><div className="border border-border p-3">RESOLUTION</div><span>→</span><div className="border border-foreground bg-section p-3">BRIER SCORES</div></div>
+      <div className="mt-8 flex flex-col items-stretch gap-2 text-center font-mono text-xs sm:flex-row sm:items-center"><div className="border border-border p-3">CHAIN EVENTS</div><span>→</span><div className="border border-border p-3">VALIDATION</div><span>→</span><div className="border border-border p-3">LATEST / WALLET + FULL HISTORY</div><span>→</span><div className="border border-border p-3">RESOLUTION</div><span>→</span><div className="border border-foreground bg-section p-3">BRIER SCORES</div></div>
       <Prose>The protocol does not overwrite history. It derives current state from immutable events.</Prose>
     </Section>
 
     <Section id="section-11" number="11" title="limits">
       <Prose>INFER is an experiment, not a solved information institution. Its weaknesses should remain inspectable.</Prose>
-      <div className="mt-6 overflow-x-auto"><table className="w-full min-w-[620px] border-collapse text-left text-sm"><thead><tr className="border-y border-border font-mono text-xs"><th className="py-3 pr-5">PROBLEM</th><th className="py-3">CURRENT MVP RESPONSE</th></tr></thead><tbody>{[["Sybil wallets","Not solved"],["Wealth selection","Explicitly measurable"],["Poor question wording","Published resolution rules"],["Thin participation","Show forecaster count"],["Repeated forecasts","Latest / wallet only"],["Fake memo","Verify token transfer"],["Fake payment","Verify mint + treasury"],["Oracle ambiguity","Manual predefined resolution"],["Wallet ≠ person","Explicit limitation"],["Collusion","Not solved"],["Token speculation","Not required for scoring logic"]].map(([a,b])=><tr key={a} className="border-b border-border"><td className="py-3 pr-5">{a}</td><td className="py-3 text-muted-foreground">{b}</td></tr>)}</tbody></table></div>
+      <div className="mt-6 overflow-x-auto"><table className="w-full min-w-[620px] border-collapse text-left text-sm"><thead><tr className="border-y border-border font-mono text-xs"><th className="py-3 pr-5">PROBLEM</th><th className="py-3">CURRENT MVP RESPONSE</th></tr></thead><tbody>{[["Sybil wallets","Not solved"],["Wealth selection","Explicitly measurable"],["Poor question wording","Published resolution rules"],["Thin participation","Show forecaster count"],["Repeated forecasts","Latest / wallet only"],["Fake memo","Verify native transfer"],["Fake payment","Verify value + treasury"],["Oracle ambiguity","Manual predefined resolution"],["Wallet ≠ person","Explicit limitation"],["Collusion","Not solved"],["Token speculation","Not required for scoring logic"]].map(([a,b])=><tr key={a} className="border-b border-border"><td className="py-3 pr-5">{a}</td><td className="py-3 text-muted-foreground">{b}</td></tr>)}</tbody></table></div>
       <div className="mt-8 grid gap-5 md:grid-cols-3"><div><Label>Sybil resistance</Label><Prose>One wallet is not one human. Repeated submissions cannot add weight, but one person can create several wallets. Version 0.1 does not solve this.</Prose></div><div><Label>Wealth selection</Label><Prose>A cost may select for willingness or ability to pay rather than information. This is a hypothesis to measure, not assume away.</Prose></div><div><Label>Token speculation</Label><Prose>Price volatility changes the real forecast cost. A future version could denominate cost against a stable reference.</Prose></div></div>
     </Section>
 

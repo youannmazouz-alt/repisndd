@@ -13,11 +13,12 @@ export function formatProbability(p: number, digits = 1): string {
 }
 
 /**
- * Formats a native-token amount with the configured symbol (ETH on
- * Robinhood Chain). Native amounts are small, so up to 6 fraction digits
- * are shown.
+ * Formats a forecast-commitment amount with the configured native-token
+ * symbol (ETH on Robinhood Chain). Native amounts are small, so up to 6
+ * fraction digits are shown. Kept named `formatInfer` because it formats the
+ * INFER commitment amount, regardless of the underlying asset symbol.
  */
-export function formatToken(amount: number): string {
+export function formatInfer(amount: number): string {
   return `${amount.toLocaleString("en-US", { maximumFractionDigits: 6 })} ${getTokenSymbol()}`
 }
 

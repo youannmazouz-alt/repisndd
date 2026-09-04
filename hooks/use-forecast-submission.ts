@@ -1,35 +1,37 @@
 "use client"
 
-import { useSendTransaction } from "@solana/react"
-import type { InferClient } from "@/lib/solana-client"
-import { buildForecastInstructions } from "@/lib/forecast-transaction"
-import type { WalletSigner } from "@solana/kit-plugin-wallet"
+import { useSendTransaction } from "wagmi"
+import { buildForecastTransaction } from "@/lib/forecast-transaction"
 
 export type ForecastSubmissionResult = {
-  signature: string
+  txHash: `0x${string}`
 }
 
 /**
- * Wraps the connected wallet's `sendTransaction` action so a component can
- * dispatch a forecast with a single call. This is the only place a
- * transaction is signed and sent - always by the connected wallet, never a
- * backend key.
+ * Wraps wagmi's `useSendTransaction` so a component can dispatch a forecast
+ * with a single call. This is the only place a transaction is signed and
+ * sent - always by the connected wallet, never a backend key. It resolves as
+ * soon as the wallet returns the transaction hash; the caller can then wait
+ * for confirmation separately.
  */
-export function useForecastSubmission(client: InferClient) {
-  const action = useSendTransaction(client)
+export function useForecastSubmission() {
+  const { sendTransactionAsync, isPending, isSuccess, isError, error, reset } = useSendTransaction()
 
-  async function submitForecast(params: { signer: WalletSigner; marketId: string; probability: number }) {
-    const instructions = await buildForecastInstructions(params)
-    const result = await action.dispatchAsync(instructions)
-    return { signature: result.context.signature } satisfies ForecastSubmissionResult
+  async function submitForecast(params: {
+    marketId: string
+    probability: number
+  }): Promise<ForecastSubmissionResult> {
+    const { to, value, data } = buildForecastTransaction(params)
+    const txHash = await sendTransactionAsync({ to, value, data })
+    return { txHash }
   }
 
   return {
     submitForecast,
-    isRunning: action.isRunning,
-    isSuccess: action.isSuccess,
-    isError: action.isError,
-    error: action.error,
-    reset: action.reset,
+    isRunning: isPending,
+    isSuccess,
+    isError,
+    error,
+    reset,
   }
 }

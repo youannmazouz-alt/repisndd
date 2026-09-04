@@ -1,48 +1,39 @@
 "use client"
 
-import { useMemo } from "react"
-import { useRequest } from "@solana/react"
-import { inferClient } from "@/lib/solana-client"
-import { getInferConfig, getSolanaNetwork } from "@/lib/env"
-import { fetchInferBalance } from "@/lib/token"
+import { useBalance } from "wagmi"
+import { getInferConfig } from "@/lib/env"
 import { explorerAddressUrl } from "@/lib/explorer"
 import { formatAddress, formatInfer } from "@/lib/format"
 
 export function TokenInfo() {
   const config = getInferConfig()
-  const network = getSolanaNetwork()
 
-  const fetchTreasuryBalance = useMemo(() => {
-    return async () => {
-      if (!inferClient || !config) return null
-      return fetchInferBalance(inferClient, config.treasuryOwner)
-    }
-  }, [config])
-
-  const { data: treasuryBalance, status } = useRequest(fetchTreasuryBalance)
-  const isLoading = status === "fetching"
+  const { data: treasuryBalance, isLoading } = useBalance({
+    address: config?.treasury,
+    query: { enabled: Boolean(config?.treasury) },
+  })
 
   if (!config) {
-    return (
-      <p className="font-mono text-sm text-muted-foreground">
-        CA :
-      </p>
-    )
+    return <p className="font-mono text-sm text-muted-foreground">Treasury not configured.</p>
   }
 
+  const balanceValue =
+    treasuryBalance !== undefined ? Number(treasuryBalance.value) / 10 ** treasuryBalance.decimals : null
+
   const rows: Array<{ label: string; value: string; href?: string }> = [
-    { label: "network", value: network },
-    { label: "mint", value: formatAddress(config.mint, 6), href: explorerAddressUrl(config.mint, config.network) },
+    { label: "network", value: config.chainName },
+    { label: "chain id", value: String(config.chainId) },
+    { label: "asset", value: `${config.tokenSymbol} (native)` },
     {
-      label: "treasury owner",
-      value: formatAddress(config.treasuryOwner, 6),
-      href: explorerAddressUrl(config.treasuryOwner, config.network),
+      label: "treasury",
+      value: formatAddress(config.treasury, 6),
+      href: explorerAddressUrl(config.treasury),
     },
     { label: "decimals", value: String(config.decimals) },
     { label: "forecast cost", value: `${formatInfer(config.forecastCost)} per submission` },
     {
       label: "treasury balance",
-      value: isLoading ? "loading..." : treasuryBalance !== null && treasuryBalance !== undefined ? formatInfer(treasuryBalance) : "unavailable",
+      value: isLoading ? "loading..." : balanceValue !== null ? formatInfer(balanceValue) : "unavailable",
     },
   ]
 

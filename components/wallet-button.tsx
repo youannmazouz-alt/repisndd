@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import { useConnection, useConnect, useConnectors, useDisconnect } from "wagmi"
 import { useInferBalance } from "@/hooks/use-infer-balance"
-import { formatAddress, formatToken } from "@/lib/format"
+import { formatAddress, formatInfer } from "@/lib/format"
 
 export function WalletButton() {
   const [hydrated, setHydrated] = useState(false)
@@ -98,7 +98,7 @@ export function WalletButton() {
       >
         <span className="font-mono text-xs">{formatAddress(address)}</span>
         <span className="font-mono text-xs text-muted-foreground">
-          {balanceLoading ? "checking balance..." : balance !== null ? formatToken(balance) : "\u2014"}
+          {balanceLoading ? "checking balance..." : balance !== null ? formatInfer(balance) : "\u2014"}
         </span>
       </button>
       {open && (
@@ -118,7 +118,7 @@ export function WalletButton() {
           <div className="mt-3 border-t border-border pt-2">
             <p className="text-xs text-muted-foreground">balance</p>
             <p className="font-mono text-sm">
-              {balanceLoading ? "checking balance..." : balance !== null ? formatToken(balance) : "\u2014"}
+              {balanceLoading ? "checking balance..." : balance !== null ? formatInfer(balance) : "\u2014"}
             </p>
           </div>
           <button
