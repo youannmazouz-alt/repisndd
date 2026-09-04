@@ -1,16 +1,18 @@
 /**
- * A normalized, validated forecast reconstructed from a Solana transaction.
- * The blockchain is the source of truth: every field here is derived from
- * an on-chain SPL token transfer + memo instruction pair.
+ * A normalized, validated forecast reconstructed from an EVM transaction on
+ * Robinhood Chain. The blockchain is the source of truth: every field here
+ * is derived from an on-chain native-value transfer to the treasury whose
+ * calldata carries a structured forecast memo.
  */
 export type Forecast = {
-  signature: string
+  /** EVM transaction hash (0x...). */
+  txHash: string
   marketId: string
   wallet: string
   probability: number
   amountCommitted: number
   timestamp: number
-  slot: number
+  blockNumber: number
 }
 
 export type MarketAggregate = {

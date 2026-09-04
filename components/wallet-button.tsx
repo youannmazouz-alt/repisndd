@@ -1,27 +1,21 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { useConnect, useDisconnect, useWallets } from "@solana/kit-plugin-wallet/react"
-import { inferClient, type InferClient } from "@/lib/solana-client"
-import { useInferWallet } from "@/lib/use-wallet-connection"
+import { useConnection, useConnect, useConnectors, useDisconnect } from "wagmi"
 import { useInferBalance } from "@/hooks/use-infer-balance"
 import { formatAddress, formatInfer } from "@/lib/format"
 
 export function WalletButton() {
-  return <WalletButtonInner client={inferClient} />
-}
-
-function WalletButtonInner({ client }: { client: InferClient }) {
   const [hydrated, setHydrated] = useState(false)
   const [open, setOpen] = useState(false)
   const [copied, setCopied] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
 
-  const { isReady, connected } = useInferWallet()
+  const { address, isConnected, status } = useConnection()
   const { balance, loading: balanceLoading } = useInferBalance()
-  const wallets = useWallets(client)
-  const { dispatch: connect, isRunning: connecting } = useConnect(client)
-  const { dispatch: disconnect } = useDisconnect(client)
+  const connectors = useConnectors()
+  const { connectAsync, isPending: connecting } = useConnect()
+  const { disconnect } = useDisconnect()
 
   useEffect(() => {
     setHydrated(true)
@@ -37,11 +31,19 @@ function WalletButtonInner({ client }: { client: InferClient }) {
     return () => document.removeEventListener("mousedown", onClickOutside)
   }, [])
 
-  if (!hydrated || !isReady) {
-    return <span className="font-mono text-xs text-muted-foreground">reading Solana...</span>
+  if (!hydrated || status === "reconnecting") {
+    return <span className="font-mono text-xs text-muted-foreground">connecting...</span>
   }
 
-  if (!connected) {
+  if (!isConnected || !address) {
+    // De-duplicate connectors that share a name (e.g. multiple injected wallets).
+    const seen = new Set<string>()
+    const uniqueConnectors = connectors.filter((c) => {
+      if (seen.has(c.name)) return false
+      seen.add(c.name)
+      return true
+    })
+
     return (
       <div className="relative" ref={containerRef}>
         <button
@@ -53,20 +55,20 @@ function WalletButtonInner({ client }: { client: InferClient }) {
         </button>
         {open && (
           <div className="absolute right-0 z-50 mt-1 w-60 border border-foreground bg-popover p-2">
-            {wallets.length === 0 ? (
+            {uniqueConnectors.length === 0 ? (
               <p className="px-2 py-2 text-xs leading-relaxed text-muted-foreground">
-                No Wallet Standard wallets detected. Install Phantom, Solflare, or Backpack.
+                No EVM wallet detected. Install MetaMask, Rabby, or another browser wallet.
               </p>
             ) : (
               <ul className="flex flex-col">
-                {wallets.map((wallet) => (
-                  <li key={wallet.name}>
+                {uniqueConnectors.map((connector) => (
+                  <li key={connector.uid}>
                     <button
                       type="button"
                       disabled={connecting}
                       onClick={async () => {
                         try {
-                          await connect(wallet)
+                          await connectAsync({ connector })
                           setOpen(false)
                         } catch {
                           // Rejected or aborted - leave the picker open.
@@ -74,7 +76,7 @@ function WalletButtonInner({ client }: { client: InferClient }) {
                       }}
                       className="flex w-full items-center justify-between px-2 py-1.5 text-left text-sm hover:bg-muted disabled:opacity-50"
                     >
-                      {wallet.name}
+                      {connector.name}
                     </button>
                   </li>
                 ))}
@@ -94,18 +96,18 @@ function WalletButtonInner({ client }: { client: InferClient }) {
         className="flex flex-col items-end gap-0.5 text-right hover:opacity-70"
         aria-label="Wallet menu"
       >
-        <span className="font-mono text-xs">{formatAddress(connected.account.address)}</span>
+        <span className="font-mono text-xs">{formatAddress(address)}</span>
         <span className="font-mono text-xs text-muted-foreground">
           {balanceLoading ? "checking balance..." : balance !== null ? formatInfer(balance) : "\u2014"}
         </span>
       </button>
       {open && (
         <div className="absolute right-0 z-50 mt-1 w-64 border border-foreground bg-popover p-3">
-          <p className="break-all font-mono text-xs">{connected.account.address}</p>
+          <p className="break-all font-mono text-xs">{address}</p>
           <button
             type="button"
             onClick={() => {
-              navigator.clipboard.writeText(connected.account.address)
+              navigator.clipboard.writeText(address)
               setCopied(true)
               setTimeout(() => setCopied(false), 1500)
             }}
@@ -114,7 +116,7 @@ function WalletButtonInner({ client }: { client: InferClient }) {
             {copied ? "copied" : "copy address"}
           </button>
           <div className="mt-3 border-t border-border pt-2">
-            <p className="text-xs text-muted-foreground">$INFER balance</p>
+            <p className="text-xs text-muted-foreground">balance</p>
             <p className="font-mono text-sm">
               {balanceLoading ? "checking balance..." : balance !== null ? formatInfer(balance) : "\u2014"}
             </p>

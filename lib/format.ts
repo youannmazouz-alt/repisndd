@@ -1,7 +1,9 @@
-/** Pure formatting helpers. No blockchain or React dependencies. */
+/** Pure formatting helpers. No React dependencies. */
 
-/** `7Gxa...91Df` style abbreviation. Never exposes the full address by default. */
-export function formatAddress(address: string, lead = 4, trail = 4): string {
+import { getTokenSymbol } from "@/lib/env"
+
+/** `0x7Gx...91Df` style abbreviation. Never exposes the full address by default. */
+export function formatAddress(address: string, lead = 6, trail = 4): string {
   if (address.length <= lead + trail + 3) return address
   return `${address.slice(0, lead)}...${address.slice(-trail)}`
 }
@@ -10,8 +12,14 @@ export function formatProbability(p: number, digits = 1): string {
   return `${p.toFixed(digits)}%`
 }
 
+/**
+ * Formats a forecast-commitment amount with the configured native-token
+ * symbol (ETH on Robinhood Chain). Native amounts are small, so up to 6
+ * fraction digits are shown. Kept named `formatInfer` because it formats the
+ * INFER commitment amount, regardless of the underlying asset symbol.
+ */
 export function formatInfer(amount: number): string {
-  return `${amount.toLocaleString("en-US", { maximumFractionDigits: 2 })} INFER`
+  return `${amount.toLocaleString("en-US", { maximumFractionDigits: 6 })} ${getTokenSymbol()}`
 }
 
 export function formatNumber(n: number): string {

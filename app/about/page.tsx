@@ -20,9 +20,10 @@ export default function AboutPage() {
           leaderboard.
         </p>
         <p>
-          Every forecast costs a fixed amount of $INFER, sent to a treasury wallet with an on-chain memo, so that
-          committing to a probability has a real, verifiable cost - but that cost is not staked against an outcome
-          and it is not returned or multiplied. It exists to keep forecasts from being free opinions.
+          Every forecast costs a fixed amount of Robinhood Chain&apos;s native asset, sent to a treasury wallet with
+          an on-chain memo, so that committing to a probability has a real, verifiable cost - but that cost is not
+          staked against an outcome and it is not returned or multiplied. It exists to keep forecasts from being free
+          opinions.
         </p>
         <p>
           What is measured is calibration: whether the probabilities a forecaster states track how often things
@@ -40,7 +41,7 @@ export default function AboutPage() {
         <p>
           INFER holds no funds beyond what a wallet transfers when submitting a forecast, runs no off-chain database
           of positions, and makes no discretionary call on any market&apos;s outcome. Every number on this site is
-          derived, in the browser or in the API route, from data that is already public on Solana.
+          derived, in the browser or in the API route, from data that is already public on Robinhood Chain.
         </p>
       </div>
     </div>

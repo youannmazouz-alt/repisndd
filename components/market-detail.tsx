@@ -11,7 +11,7 @@ import type { Market } from "@/types/market"
 
 export function MarketDetail({ market }: { market: Market }) {
   const { aggregate, isLoading, error, refresh } = useMarketForecasts(market.id)
-  const { connected } = useInferWallet()
+  const { address, isConnected } = useInferWallet()
   const config = getInferConfig()
 
   const belief = aggregate?.currentBelief ?? null
@@ -21,9 +21,10 @@ export function MarketDetail({ market }: { market: Market }) {
   const history = aggregate?.history ?? []
   const recentForecasts = aggregate?.forecasts ?? []
 
-  const myForecast = connected
-    ? recentForecasts.find((f) => f.wallet === connected.account.address)
-    : undefined
+  const myForecast =
+    isConnected && address
+      ? recentForecasts.find((f) => f.wallet.toLowerCase() === address.toLowerCase())
+      : undefined
 
   return (
     <div className="mx-auto max-w-[960px] px-4 py-10 sm:px-6">
@@ -47,7 +48,7 @@ export function MarketDetail({ market }: { market: Market }) {
 
         <div className="mt-6">
           {error ? (
-            <p className="text-sm text-muted-foreground">Solana data is temporarily unavailable. <button onClick={() => refresh()} className="underline">retry</button></p>
+            <p className="text-sm text-muted-foreground">On-chain data is temporarily unavailable. <button onClick={() => refresh()} className="underline">retry</button></p>
           ) : (
             <ProbabilityChart points={history} />
           )}
@@ -95,7 +96,7 @@ export function MarketDetail({ market }: { market: Market }) {
       <section>
         <h2 className="font-mono text-xs uppercase tracking-wide text-muted-foreground">recent forecasts</h2>
         <div className="mt-3">
-          <ForecastHistory forecasts={recentForecasts.slice(0, 25)} network={config?.network ?? "devnet"} />
+          <ForecastHistory forecasts={recentForecasts.slice(0, 25)} />
         </div>
       </section>
     </div>

@@ -1,53 +1,43 @@
-import { address as toAddress } from "@solana/kit"
-import { getTransferCheckedInstruction } from "@solana-program/token"
-import { getAddMemoInstruction } from "@solana-program/memo"
-import type { WalletSigner } from "@solana/kit-plugin-wallet"
+import { parseEther, stringToHex, type Hex } from "viem"
 import { getInferConfig } from "@/lib/env"
 import { buildForecastMemo } from "@/lib/forecast-parser"
-import { getAssociatedTokenAddress } from "@/lib/token"
+
+export type ForecastTransactionRequest = {
+  to: `0x${string}`
+  value: bigint
+  data: Hex
+}
 
 /**
- * Builds the two instructions that make up a single forecast transaction:
+ * Builds the single EVM transaction that makes up a forecast on Robinhood
+ * Chain:
  *
- *   1. A $INFER token transfer from the signer's associated token account
- *      to the configured treasury token account.
- *   2. A Memo instruction recording `INFER|v1|market=<id>|p=<probability>`.
+ *   - a native-token transfer of the configured forecast cost to the
+ *     treasury address, and
+ *   - the structured memo `INFER|v1|market=<id>|p=<probability>` encoded as
+ *     UTF-8 bytes in the transaction's calldata (`data`).
  *
- * Both instructions are returned together so the caller can submit them as
- * ONE signed Solana transaction. This function never signs or sends
- * anything itself - the connected wallet does that.
+ * The value and the memo travel together in ONE transaction so the indexer
+ * can validate commitment and claim as a pair. This function never signs or
+ * sends anything - the connected wallet does that.
  */
-export async function buildForecastInstructions(params: {
-  signer: WalletSigner
+export function buildForecastTransaction(params: {
   marketId: string
   probability: number
-}) {
+}): ForecastTransactionRequest {
   const config = getInferConfig()
   if (!config) {
-    throw new Error("INFER is not configured. Add Solana environment variables.")
+    throw new Error("INFER is not configured. Add the treasury environment variables.")
   }
 
-  const { signer, marketId, probability } = params
+  const { marketId, probability } = params
   if (!Number.isInteger(probability) || probability < 1 || probability > 99) {
     throw new Error("Probability must be an integer between 1 and 99.")
   }
 
-  const sourceAta = await getAssociatedTokenAddress(signer.address, config.mint)
-  const amount = BigInt(Math.round(config.forecastCost * 10 ** config.decimals))
-
-  const transferInstruction = getTransferCheckedInstruction({
-    source: sourceAta,
-    mint: toAddress(config.mint),
-    destination: toAddress(config.treasuryTokenAccount),
-    authority: signer,
-    amount,
-    decimals: config.decimals,
-  })
-
-  const memoInstruction = getAddMemoInstruction({
-    memo: buildForecastMemo(marketId, probability),
-    signers: [signer],
-  })
-
-  return [transferInstruction, memoInstruction]
+  return {
+    to: config.treasury,
+    value: parseEther(String(config.forecastCost)),
+    data: stringToHex(buildForecastMemo(marketId, probability)),
+  }
 }

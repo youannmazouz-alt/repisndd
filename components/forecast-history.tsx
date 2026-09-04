@@ -1,6 +1,5 @@
 import { explorerTxUrl } from "@/lib/explorer"
 import { formatAddress, formatDate, formatInfer, formatProbability } from "@/lib/format"
-import type { SolanaNetwork } from "@/lib/env"
 import type { Forecast } from "@/types/forecast"
 import { getMarket } from "@/lib/markets"
 
@@ -11,12 +10,10 @@ import { getMarket } from "@/lib/markets"
  */
 export function ForecastHistory({
   forecasts,
-  network,
   showWallet = true,
   showQuestion = false,
 }: {
   forecasts: Forecast[]
-  network: SolanaNetwork
   showWallet?: boolean
   showQuestion?: boolean
 }) {
@@ -53,7 +50,7 @@ export function ForecastHistory({
           {forecasts.map((f) => {
             const market = getMarket(f.marketId)
             return (
-              <tr key={f.signature} className="border-b border-border">
+              <tr key={f.txHash} className="border-b border-border">
                 <td className="py-2 pr-4 font-mono whitespace-nowrap">{formatDate(f.timestamp)}</td>
                 {showQuestion && (
                   <td className="py-2 pr-4 text-pretty">{market?.shortQuestion ?? f.marketId}</td>
@@ -63,12 +60,12 @@ export function ForecastHistory({
                 <td className="py-2 pr-4 font-mono tabular-nums">{formatInfer(f.amountCommitted)}</td>
                 <td className="py-2">
                   <a
-                    href={explorerTxUrl(f.signature, network)}
+                    href={explorerTxUrl(f.txHash)}
                     target="_blank"
                     rel="noreferrer"
                     className="font-mono text-xs"
                   >
-                    tx {formatAddress(f.signature)} &#8599;
+                    tx {formatAddress(f.txHash)} &#8599;
                   </a>
                 </td>
               </tr>

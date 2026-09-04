@@ -8,15 +8,15 @@ export const metadata: Metadata = {
 const sections = [
   {
     title: "Submission",
-    body: "A forecast is a single SPL token transfer from a forecaster's wallet to the INFER treasury, carrying a fixed amount of $INFER and a memo instruction encoding the market id and a probability between 1 and 99. The transaction is built client-side, signed by the connected wallet, and sent directly to the network - INFER never holds a private key or custodies funds beyond the transfer itself.",
+    body: "A forecast is a single native-asset transfer from a forecaster's wallet to the INFER treasury on Robinhood Chain, carrying a fixed amount of the native asset and a memo encoded in the transaction's calldata that records the market id and a probability between 1 and 99. The transaction is built client-side, signed by the connected wallet, and sent directly to the network - INFER never holds a private key or custodies funds beyond the transfer itself.",
   },
   {
     title: "Memo format",
-    body: "The memo is a plain string: INFER:v1:<marketId>:<probabilityInteger>. Any transaction to the treasury whose memo does not match this exact shape, or whose amount does not match the configured forecast cost, is ignored by the indexer - it is not shown as a forecast and does not enter any aggregate.",
+    body: "The memo is a plain string encoded as UTF-8 bytes in the transaction calldata: INFER|v1|market=<marketId>|p=<probabilityInteger>. Any transaction to the treasury whose memo does not match this exact shape, or whose transferred value is below the configured forecast cost, is ignored by the indexer - it is not shown as a forecast and does not enter any aggregate.",
   },
   {
     title: "Indexing",
-    body: "Forecasts are not stored in a database. Each request to /api/forecasts queries the Solana RPC for the treasury token account's transaction history, decodes every matching transfer and memo, and rebuilds the market's current state from scratch. The result is cached briefly at the edge to keep repeated page loads fast without re-scanning history on every render.",
+    body: "Forecasts are not stored in a database. Each request to /api/forecasts queries the Robinhood Chain block explorer for the treasury address's transaction history, decodes every matching transfer and calldata memo, and rebuilds the market's current state from scratch. The result is cached briefly at the edge to keep repeated page loads fast without re-scanning history on every render.",
   },
   {
     title: "Aggregation",

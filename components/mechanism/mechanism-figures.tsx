@@ -56,14 +56,14 @@ const lifecycle = [
   ["forecast", "RESOLVABLE QUESTION", "Will X happen before T?"],
   ["estimate", "FORECASTER ESTIMATE", "P(X) = 72%"],
   ["commit", "ECONOMIC COMMITMENT", "1 $INFER"],
-  ["record", "SOLANA TRANSACTION", "transfer + memo"],
+  ["record", "ROBINHOOD CHAIN TX", "transfer + memo"],
   ["validate", "FORECAST VALIDATION", "claim and payment match"],
   ["aggregate", "AGGREGATE BELIEF", "latest forecast / wallet"],
   ["resolve", "QUESTION RESOLVES", "outcome ∈ {0,1}"],
   ["score", "BRIER SCORE", "BS = (p − o)²"],
 ] as const
 const notes: Record<string, string> = {
-  forecast: "A question must be objectively resolvable under a rule published in advance.", estimate: "The forecaster states uncertainty as a probability, not a categorical claim.", commit: "A standardized token cost accompanies every submission and revision.", record: "One transaction carries both the SPL token transfer and structured memo.", validate: "The indexer accepts neither evidence in isolation.", aggregate: "Each wallet contributes one current belief, regardless of balance or revisions.", resolve: "A published rule maps observed reality to a binary outcome.", score: "The forecast is compared with reality using a proper scoring rule."
+  forecast: "A question must be objectively resolvable under a rule published in advance.", estimate: "The forecaster states uncertainty as a probability, not a categorical claim.", commit: "A standardized token cost accompanies every submission and revision.", record: "One transaction carries both the native-asset transfer and the structured calldata memo.", validate: "The indexer accepts neither evidence in isolation.", aggregate: "Each wallet contributes one current belief, regardless of balance or revisions.", resolve: "A published rule maps observed reality to a binary outcome.", score: "The forecast is compared with reality using a proper scoring rule."
 }
 export function LifecycleDiagram() {
   const [active, setActive] = useState("forecast")
@@ -83,11 +83,11 @@ export function LifecycleDiagram() {
 }
 
 export function TransactionFigure() {
-  return <Figure number={3} caption="Illustrative transaction anatomy. Every address, signature, slot and amount below is synthetic.">
+  return <Figure number={3} caption="Illustrative transaction anatomy. Every address, hash, block and amount below is synthetic.">
     <div className="font-mono text-xs leading-relaxed">
-      <div className="border border-border p-4"><div className="flex justify-between gap-4 border-b border-border pb-3"><strong>SOLANA TRANSACTION</strong><span className="text-muted-foreground">ILLUSTRATIVE</span></div>
-        <dl className="mt-3 grid grid-cols-[7rem_1fr] gap-y-1"><dt className="text-muted-foreground">signature</dt><dd>5JxK...4Pa [synthetic]</dd><dt className="text-muted-foreground">slot</dt><dd>327,184,991 [example]</dd><dt className="text-muted-foreground">timestamp</dt><dd>23 Aug 2026 21:07 UTC [example]</dd></dl>
-        <div className="mt-4 grid gap-3 md:grid-cols-2"><div className="border border-border p-3"><strong>INSTRUCTION 01 / SPL TRANSFER</strong><p className="mt-3 text-muted-foreground">source</p><p>Alice INFER ATA / synthetic</p><p className="mt-2 text-muted-foreground">amount</p><p>1.000000000 INFER</p><p className="mt-2 text-muted-foreground">destination</p><p>INFER Treasury ATA / synthetic</p></div><div className="border border-border p-3"><strong>INSTRUCTION 02 / MEMO</strong><p className="mt-3 break-all">INFER|v1|market=MKT001|p=72</p></div></div>
+      <div className="border border-border p-4"><div className="flex justify-between gap-4 border-b border-border pb-3"><strong>ROBINHOOD CHAIN TRANSACTION</strong><span className="text-muted-foreground">ILLUSTRATIVE</span></div>
+        <dl className="mt-3 grid grid-cols-[7rem_1fr] gap-y-1"><dt className="text-muted-foreground">hash</dt><dd>0x5Jx...c4Pa [synthetic]</dd><dt className="text-muted-foreground">block</dt><dd>327,184,991 [example]</dd><dt className="text-muted-foreground">timestamp</dt><dd>23 Aug 2026 21:07 UTC [example]</dd></dl>
+        <div className="mt-4 grid gap-3 md:grid-cols-2"><div className="border border-border p-3"><strong>NATIVE VALUE TRANSFER</strong><p className="mt-3 text-muted-foreground">from</p><p>0xA11ce...f00d / synthetic</p><p className="mt-2 text-muted-foreground">value</p><p>0.001000000 ETH</p><p className="mt-2 text-muted-foreground">to</p><p>INFER Treasury 0x7rea...5ury / synthetic</p></div><div className="border border-border p-3"><strong>CALLDATA / MEMO</strong><p className="mt-3 break-all">INFER|v1|market=MKT001|p=72</p></div></div>
         <p className="mt-3"><span className="text-muted-foreground">STATUS</span> confirmed [illustrative]</p>
       </div><p className="mt-3 text-muted-foreground">latest valid forecast transaction / No live transaction available yet.</p>
     </div>
@@ -95,9 +95,9 @@ export function TransactionFigure() {
 }
 
 export function ValidationFlow() {
-  const checks = ["Has INFER memo?", "Valid market ID?", "1 ≤ probability ≤ 99?", "INFER transfer exists?", "Correct mint?", "Correct treasury?", "Amount ≥ forecast cost?"]
+  const checks = ["Has INFER memo?", "Valid market ID?", "1 ≤ probability ≤ 99?", "Sent to treasury?", "Tx succeeded?", "Value ≥ forecast cost?"]
   return <Figure number={4} caption="A memo alone is not a forecast. INFER validates commitment and claim together." wide>
-    <div className="flex min-w-[760px] items-center gap-2 py-4 font-mono text-xs"><div className="border border-border p-3 font-bold">RAW SOLANA TX</div><span>→</span>{checks.map((check, i) => <div key={check} className="flex items-center gap-2"><div className="border border-border p-3"><span>{check}</span><span className="mt-2 block text-[10px] text-muted-foreground">NO → REJECT</span></div>{i < checks.length - 1 && <span>→</span>}</div>)}<span>→</span><div className="border border-foreground bg-section p-3 font-bold">VALID FORECAST</div></div>
+    <div className="flex min-w-[760px] items-center gap-2 py-4 font-mono text-xs"><div className="border border-border p-3 font-bold">RAW CHAIN TX</div><span>→</span>{checks.map((check, i) => <div key={check} className="flex items-center gap-2"><div className="border border-border p-3"><span>{check}</span><span className="mt-2 block text-[10px] text-muted-foreground">NO → REJECT</span></div>{i < checks.length - 1 && <span>→</span>}</div>)}<span>→</span><div className="border border-foreground bg-section p-3 font-bold">VALID FORECAST</div></div>
   </Figure>
 }
 
@@ -115,7 +115,7 @@ export function CalibrationChart() {
 }
 
 export function SystemFlow({ master = false }: { master?: boolean }) {
-  const items = master ? ["FORECASTER\nP(X)=72%", "SOLANA TX\n1 INFER + memo", "LEDGER\nimmutable", "VALIDATION", "LATEST / WALLET", "AGGREGATE\n67.3%", "REALITY\noutcome {0,1}", "BRIER SCORE"] : ["WALLETS", "INFER WEB APP\nNext.js / Vercel", "TRANSACTION BUILDER", "SPL TRANSFER + MEMO", "SOLANA NETWORK", "INDEXER\nparse · validate · normalize", "FORECAST STATE", "RESOLUTION", "BRIER SCORE", "JUDGMENT TABLE"]
+  const items = master ? ["FORECASTER\nP(X)=72%", "CHAIN TX\ncost + memo", "LEDGER\nimmutable", "VALIDATION", "LATEST / WALLET", "AGGREGATE\n67.3%", "REALITY\noutcome {0,1}", "BRIER SCORE"] : ["WALLETS", "INFER WEB APP\nNext.js / Vercel", "TRANSACTION BUILDER", "NATIVE TRANSFER + MEMO", "ROBINHOOD CHAIN", "INDEXER\nparse · validate · normalize", "FORECAST STATE", "RESOLUTION", "BRIER SCORE", "JUDGMENT TABLE"]
   return <Figure number={master ? 11 : 8} caption={master ? "INFER in one diagram: opinion, cost, record, aggregation, resolution and measurement." : "Full system architecture from client wallets to judgment measurement."} wide>
     <svg viewBox={`0 0 ${items.length * 155 + 30} 190`} className="h-[190px] min-w-[980px] w-full" role="img" aria-label={master ? "INFER master diagram" : "INFER system architecture"}><ArrowDefs />{items.map((item,i)=><g key={item}><Box x={20+i*155} y={55} w={130} h={76} title={item.split("\n")[0]} lines={item.split("\n").slice(1)} dashed={i===5 && !master}/>{i<items.length-1&&<Line x1={150+i*155} y1={93} x2={172+i*155} y2={93}/>}</g>)}</svg>
   </Figure>

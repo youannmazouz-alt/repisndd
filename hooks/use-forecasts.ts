@@ -7,14 +7,14 @@ async function fetchJson(url: string) {
   const res = await fetch(url)
   if (!res.ok) {
     const body = await res.json().catch(() => null)
-    throw new Error(body?.error ?? "Solana data is temporarily unavailable.")
+    throw new Error(body?.error ?? "On-chain data is temporarily unavailable.")
   }
   return res.json()
 }
 
 /**
  * Client-side view of a single market's indexed forecasts, backed by the
- * `/api/forecasts` server route (which itself reads Solana and caches
+ * `/api/forecasts` server route (which itself reads Robinhood Chain and caches
  * briefly). Used so the UI can refresh right after a forecast transaction
  * confirms, without re-downloading the whole treasury history on every
  * render.

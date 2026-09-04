@@ -1,22 +1,24 @@
 "use client"
 
 import { useState } from "react"
-import { isAbortError } from "@solana/promises"
+import { useConfig } from "wagmi"
+import { waitForTransactionReceipt } from "wagmi/actions"
 import { ProbabilitySlider } from "@/components/probability-slider"
 import { InferButton } from "@/components/infer-button"
 import { TransactionResult, type ForecastTxState } from "@/components/transaction-result"
 import { useInferWallet } from "@/lib/use-wallet-connection"
 import { useInferBalance } from "@/hooks/use-infer-balance"
 import { useForecastSubmission } from "@/hooks/use-forecast-submission"
+import { WalletButton } from "@/components/wallet-button"
 import { getInferConfig } from "@/lib/env"
 import { formatInfer } from "@/lib/format"
 import type { Market } from "@/types/market"
 import type { Forecast } from "@/types/forecast"
-import type { InferClient } from "@/lib/solana-client"
 
 /**
  * The primary interaction of the whole application: pick a probability,
- * commit $INFER, and record both in one signed Solana transaction.
+ * commit the forecast cost, and record both in one signed Robinhood Chain
+ * transaction (a native-value transfer whose calldata carries the memo).
  */
 export function ForecastForm({
   market,
@@ -28,12 +30,14 @@ export function ForecastForm({
   onSubmitted?: () => void
 }) {
   const config = getInferConfig()
-  const { client, isReady, connected } = useInferWallet()
+  const { address, isConnected, isReady } = useInferWallet()
 
   if (!config) {
     return (
       <div className="border border-border bg-secondary/40 p-4">
-        <p className="text-sm text-muted-foreground">INFER is not configured. Add Solana environment variables.</p>
+        <p className="text-sm text-muted-foreground">
+          INFER is not configured. Add the Robinhood Chain environment variables.
+        </p>
       </div>
     )
   }
@@ -49,13 +53,14 @@ export function ForecastForm({
   }
 
   if (!isReady) {
-    return <p className="font-mono text-sm text-muted-foreground">reading Solana...</p>
+    return <p className="font-mono text-sm text-muted-foreground">reading wallet...</p>
   }
 
-  if (!client || !connected) {
+  if (!isConnected || !address) {
     return (
-      <div className="border border-border bg-secondary/40 p-4">
-        <p className="text-sm text-muted-foreground">Connect a Solana wallet to submit a forecast.</p>
+      <div className="flex flex-col items-start gap-3 border border-border bg-secondary/40 p-4">
+        <p className="text-sm text-muted-foreground">Connect an EVM wallet to submit a forecast.</p>
+        <WalletButton />
       </div>
     )
   }
@@ -64,55 +69,48 @@ export function ForecastForm({
   // (probability, tx status) whenever the active wallet account changes.
   return (
     <ConnectedForecastForm
-      key={connected.account.address}
-      client={client}
+      key={address}
       market={market}
       existingForecast={existingForecast}
       forecastCost={config.forecastCost}
-      network={config.network}
       onSubmitted={onSubmitted}
     />
   )
 }
 
 function ConnectedForecastForm({
-  client,
   market,
   existingForecast,
   forecastCost,
-  network,
   onSubmitted,
 }: {
-  client: InferClient
   market: Market
   existingForecast?: Forecast
   forecastCost: number
-  network: "devnet" | "mainnet" | "testnet"
   onSubmitted?: () => void
 }) {
-  const { connected } = useInferWallet()
-  const { balance, loading: balanceLoading } = useInferBalance()
-  const { submitForecast } = useForecastSubmission(client)
+  const wagmiConfig = useConfig()
+  const { balance, loading: balanceLoading, refresh } = useInferBalance()
+  const { submitForecast } = useForecastSubmission()
 
   const [probability, setProbability] = useState(existingForecast?.probability ?? 50)
   const [txState, setTxState] = useState<ForecastTxState>({ status: "idle" })
 
-  const signer = connected?.signer ?? null
   const hasEnoughBalance = balance !== null && balance >= forecastCost
   const isBusy = txState.status === "submitting" || txState.status === "confirming"
-  const canSubmit = Boolean(signer) && hasEnoughBalance && !isBusy
+  const canSubmit = hasEnoughBalance && !isBusy
 
   async function handleSubmit() {
-    if (!signer) return
     setTxState({ status: "submitting" })
     try {
+      const { txHash } = await submitForecast({ marketId: market.id, probability })
       setTxState({ status: "confirming" })
-      const { signature } = await submitForecast({ signer, marketId: market.id, probability })
-      setTxState({ status: "success", signature, probability })
+      await waitForTransactionReceipt(wagmiConfig, { hash: txHash })
+      setTxState({ status: "success", txHash, probability })
+      await refresh()
       onSubmitted?.()
     } catch (err) {
-      if (isAbortError(err)) return
-      const outcome = readableSolanaError(err)
+      const outcome = readableEvmError(err)
       if (outcome === "cancelled") {
         setTxState({ status: "cancelled" })
       } else {
@@ -136,23 +134,31 @@ function ConnectedForecastForm({
 
       {!balanceLoading && !hasEnoughBalance && balance !== null && (
         <p className="text-sm text-destructive">
-          {forecastCost} INFER required. Your balance: {balance} INFER.
+          {formatInfer(forecastCost)} required. Your balance: {formatInfer(balance)}.
         </p>
       )}
 
-      {!signer && <p className="text-sm text-muted-foreground">This wallet cannot sign transactions.</p>}
-
-      <TransactionResult state={txState} network={network} />
+      <TransactionResult state={txState} />
     </div>
   )
 }
 
-function readableSolanaError(err: unknown): string {
+function readableEvmError(err: unknown): string {
   if (err instanceof Error) {
     const message = err.message.toLowerCase()
-    if (message.includes("user rejected") || message.includes("reject")) return "cancelled"
-    if (message.includes("insufficient")) return "Insufficient SOL to cover the network fee, or insufficient $INFER."
-    if (message.includes("timeout")) return "Solana did not respond in time. Please try again."
+    if (
+      message.includes("user rejected") ||
+      message.includes("user denied") ||
+      message.includes("rejected the request")
+    ) {
+      return "cancelled"
+    }
+    if (message.includes("insufficient funds") || message.includes("insufficient"))
+      return "Insufficient balance to cover the forecast cost plus the network gas fee."
+    if (message.includes("timeout") || message.includes("timed out"))
+      return "The network did not respond in time. Please try again."
+    if (message.includes("chain") && message.includes("mismatch"))
+      return "Wrong network. Switch your wallet to Robinhood Chain and try again."
     return "The transaction could not be completed. Please try again."
   }
   return "The transaction could not be completed. Please try again."

@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { getAllValidForecasts } from "@/lib/forecast-indexer"
 import { currentBelief, replayBeliefHistory, totalCommitted, uniqueForecasterCount } from "@/lib/aggregation"
-import { isSolanaConfigured } from "@/lib/env"
+import { isInferConfigured } from "@/lib/env"
 import { markets } from "@/lib/markets"
 import type { Forecast, MarketAggregate } from "@/types/forecast"
 
@@ -20,8 +20,8 @@ function buildAggregate(marketId: string, forecasts: Forecast[]): MarketAggregat
 
 /**
  * Server-side indexing endpoint. The blockchain is the source of truth:
- * this route reads raw transactions from Solana, validates them, and
- * returns normalized forecast data. It never fabricates data.
+ * this route reads raw transactions from Robinhood Chain, validates them,
+ * and returns normalized forecast data. It never fabricates data.
  *
  *   GET /api/forecasts?market=MKT001
  *   GET /api/forecasts                (all markets)
@@ -29,9 +29,9 @@ function buildAggregate(marketId: string, forecasts: Forecast[]): MarketAggregat
  *   GET /api/forecasts?refresh=1      (bypass the short-lived cache)
  */
 export async function GET(request: NextRequest) {
-  if (!isSolanaConfigured()) {
+  if (!isInferConfigured()) {
     return NextResponse.json(
-      { error: "INFER is not configured. Add Solana environment variables." },
+      { error: "INFER is not configured. Add the Robinhood Chain environment variables." },
       { status: 503 },
     )
   }
@@ -70,6 +70,6 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error("[v0] /api/forecasts indexing failed:", error)
-    return NextResponse.json({ error: "Solana data is temporarily unavailable." }, { status: 502 })
+    return NextResponse.json({ error: "On-chain data is temporarily unavailable." }, { status: 502 })
   }
 }
